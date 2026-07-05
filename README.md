@@ -6,13 +6,15 @@ or ticket creation. Built as a portfolio project demonstrating AI-in-the-loop di
 systems — messaging, caching, and observability included end-to-end.
 
 ## Status
-🚧 Work in progress — currently in **Phase 1 (Foundations)**.
+✅ **Phase 1 (Foundations) complete** — starting **Phase 2 (Kafka wiring)** next.
 
 - [x] Repo scaffolding
 - [x] `chat-service` skeleton (Spring Boot 4.1)
 - [x] Postgres via Docker Compose
 - [x] Schema migrations (Flyway)
-- [ ] `POST /api/messages` ingest endpoint
+- [x] `POST /messages` ingest endpoint
+- [x] `GET /conversations/{id}/messages` read-back endpoint
+- [x] Unit + integration tests (Testcontainers)
 - [ ] Kafka wiring
 - [ ] AI classification service
 - [ ] Routing/escalation logic
@@ -21,11 +23,14 @@ systems — messaging, caching, and observability included end-to-end.
 - [ ] React frontend
 
 See [`customer-support-router-plan.md`](./customer-support-router-plan.md) for the full
-architecture and phased build plan.
+architecture and phased build plan, and [`phase-1-status-note.md`](./phase-1-status-note.md)
+for build notes, key decisions, and open questions carried into Phase 2.
 
 ## Architecture (target)
+```
 React → Spring Boot (chat-service) → Kafka → AI Classifier Service → Routing →
 Redis (memory) / Postgres (source of truth) → Prometheus + Grafana
+```
 
 ## Tech stack
 Spring Boot · Kafka · Redis · PostgreSQL · Docker Compose · Ollama (dev) / OpenAI /
@@ -39,11 +44,17 @@ cd chat-service
 ./mvnw spring-boot:run
 ```
 
+Running tests requires Docker (Testcontainers spins up a real Postgres container):
+```bash
+./mvnw test
+```
+
 ## Repo structure
+```
 customer-support-router/
 ├── chat-service/          Spring Boot: ingest, REST, Postgres
 ├── ai-classifier-service/ Spring Boot: LLM calls, classification (not yet started)
 ├── frontend/              React chat UI (not yet started)
 ├── docker-compose.yml
 └── customer-support-router-plan.md
-
+```
