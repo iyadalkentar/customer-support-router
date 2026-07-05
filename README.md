@@ -11,7 +11,7 @@ systems — messaging, caching, and observability included end-to-end.
 - [x] Repo scaffolding
 - [x] `chat-service` skeleton (Spring Boot 4.1)
 - [x] Postgres via Docker Compose
-- [ ] Schema migrations (Flyway)
+- [x] Schema migrations (Flyway)
 - [ ] `POST /api/messages` ingest endpoint
 - [ ] Kafka wiring
 - [ ] AI classification service
