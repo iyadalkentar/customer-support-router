@@ -12,16 +12,22 @@ import com.ikdev.customersupportrouter.chatservice.exception.ConversationNotFoun
 import com.ikdev.customersupportrouter.chatservice.exception.ConversationClosedException;
 import com.ikdev.customersupportrouter.chatservice.repository.ConversationRepository;
 import com.ikdev.customersupportrouter.chatservice.repository.MessageRepository;
+import org.springframework.context.ApplicationEventPublisher;
+import com.ikdev.customersupportrouter.chatservice.event.MessageEvent;
+import com.ikdev.customersupportrouter.chatservice.event.MessagePersistedEvent;
 
 @Service
 public class ConversationService {
 
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public ConversationService(ConversationRepository conversationRepository, MessageRepository messageRepository) {
+    public ConversationService(ConversationRepository conversationRepository, MessageRepository messageRepository,
+            ApplicationEventPublisher eventPublisher) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -48,6 +54,7 @@ public class ConversationService {
         conversation.addMessage(message);
         messageRepository.save(message);
         conversationRepository.save(conversation);
+        eventPublisher.publishEvent(new MessagePersistedEvent(MessageEvent.from(message)));
         return message;
     }
 
