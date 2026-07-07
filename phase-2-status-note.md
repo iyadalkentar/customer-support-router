@@ -44,54 +44,59 @@
   in Docker. Flagged for revisit if either service is containerized later —
   would need to advertise the Docker Compose service name instead.
 
-## Jackson 2 vs. Jackson 3 — required coexistence (not incidental)
-This was the most time-consuming issue in the phase and is worth documenting
-precisely, since it's non-obvious and specific to being on Boot 4.1:
+## Jackson 2 vs. Jackson 3 — resolved by migrating to Jackson-3-native Kafka (de)serializers
+This was the most time-consuming issue in the phase. The eventual root cause
+was simpler than it looked at first — worth documenting the path taken so the
+detour isn't repeated:
 
-- **Spring Boot 4.1 uses Jackson 3** (`tools.jackson.*` groupId) for its own
-  auto-configured `ObjectMapper` and Jackson auto-configuration.
-- **Spring Kafka's `JsonSerializer`/`JsonDeserializer` (spring-kafka 4.1.0)
-  still depend on Jackson 2** (`com.fasterxml.jackson.*`) classes at runtime —
-  specifically `com.fasterxml.jackson.core.type.TypeReference`.
-- Initial attempt used `spring.json.objectmapper: "customObjectMapper"` in
-  `application.yml`, pointing the Kafka serializers at a named Spring bean that
-  was never actually defined. This caused a context startup failure
-  (missing-bean style error) — traced back after the fact; the earlier "fails
-  to boot, fixed by a 0.0.0.0-related config" note from earlier in the phase
-  was likely a misremembered version of this same class of issue, not a
-  distinct network-binding problem. No confirmed root cause for a genuine
-  `0.0.0.0` listener issue was found — flagged as unresolved rather than
-  asserting a specific fix.
-- **Fix, step 1:** removed `spring.json.objectmapper` entirely. Spring Kafka's
-  `JsonSerializer`/`JsonDeserializer` build their own internal Jackson 2
-  `ObjectMapper` by default when no custom mapper is configured, so this was
-  unnecessary.
-- **Attempted follow-up cleanup:** removed the explicit Jackson 2 dependencies
-  (`jackson-core`, `jackson-databind`, `jackson-datatype-jsr310`, all
-  `2.17.1`) from `chat-service/pom.xml`, on the assumption Boot 4.1's Jackson 3
-  migration made them redundant.
-- **This broke the consumer at startup**:
-  `NoClassDefFoundError: com/fasterxml/jackson/core/type/TypeReference`,
-  surfaced via `KafkaException: Failed to construct kafka consumer` →
-  `Failed to start bean 'internalKafkaListenerEndpointRegistry'`. Confirmed
-  that Spring Kafka's JSON (de)serializers need Jackson 2 present on the
-  classpath regardless of what Boot itself uses internally.
-- **Final fix:** restored all three Jackson 2 dependencies as explicit
-  `pom.xml` entries (`2.17.1`). They are required for Spring Kafka's
-  serializers, not leftover/redundant cruft from a Boot 3.x-era tutorial as
-  initially suspected. `jackson-datatype-jsr310` in particular is needed for
-  `OffsetDateTime` (used in `MessageEvent.createdAt`) to serialize/deserialize
-  correctly through Spring Kafka's internal Jackson 2 mapper.
-- **Net result:** Jackson 2 and Jackson 3 legitimately coexist on the
-  classpath in this project — Boot's own machinery uses Jackson 3, Spring
-  Kafka's JSON serialization uses Jackson 2. This isn't a version conflict to
-  "resolve," just a fact of the current library versions being on different
-  Jackson majors at different paces.
+- **Spring Boot 4.1 uses Jackson 3** (`tools.jackson.*` groupId) by default.
+- Initial Kafka config used `org.springframework.kafka.support.serializer.
+  JsonSerializer`/`JsonDeserializer` — these are Spring Kafka's **older,
+  Jackson-2-only** classes, now deprecated for removal (deprecated since
+  Spring Kafka 4.0) in favor of Jackson-3-native replacements.
+- This produced a chain of confusing symptoms while still on the old classes:
+  - `spring.json.objectmapper: "customObjectMapper"` pointed at a Spring bean
+    that was never defined → context startup failure. (The earlier
+    "0.0.0.0-related" boot failure noted earlier in the phase was likely a
+    misremembered version of this same issue — no distinct network-binding
+    root cause was ever confirmed, so that's logged as unresolved/unconfirmed
+    rather than fact.)
+  - Removing the explicit Jackson 2 dependencies (assuming Boot 4.1's Jackson
+    3 migration made them redundant) broke the consumer at startup:
+    `NoClassDefFoundError: com/fasterxml/jackson/core/type/TypeReference`,
+    because the old `JsonSerializer`/`JsonDeserializer` genuinely require
+    Jackson 2 classes at runtime regardless of what Boot itself uses.
+  - Re-adding Jackson 2 dependencies fixed the boot failure, but left the
+    project running Jackson 2 and Jackson 3 side by side, with the producer
+    (Jackson 2) and a test consumer written against `JacksonJsonDeserializer`
+    (Jackson 3) mismatched — a fragile, temporary-feeling state.
+- **Actual fix:** switched `application.yml` to Spring Kafka's Jackson-3-native
+  classes:
+  ```yaml
+  producer:
+    value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+  consumer:
+    value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+    properties:
+      spring.json.value.default.type: com.ikdev.customersupportrouter.chatservice.event.MessageEvent
+  ```
+- With that change, **all explicit Jackson 2 dependencies were removed from
+  `chat-service/pom.xml`** (`jackson-core`, `jackson-databind`,
+  `jackson-datatype-jsr310`, all `2.17.1`) and everything — boot, unit tests,
+  and the Kafka integration test including `OffsetDateTime` round-tripping —
+  works on Jackson 3 alone.
+- **Net result:** no Jackson 2/3 coexistence needed. The project is fully on
+  Jackson 3, consistent with Boot 4.1's own defaults. The earlier "coexistence
+  is required" conclusion was incorrect — it was an artifact of using
+  deprecated Spring Kafka classes, not a genuine cross-library requirement.
 
 ## Open questions carried into Phase 3
-- Whether Spring Kafka will release a Jackson-3-native serializer in a future
-  version — worth a quick check before Phase 3 in case it changes the
-  dependency setup again.
+- **Approach note:** routing/escalation logic (`sentiment=negative + urgency=high
+  → escalate`, etc.) is pure business logic with no infra dependencies —
+  planned to be built test-first (TDD) in Phase 3, unlike Phase 2's
+  test-after approach, which fit better while the Kafka event design was
+  still being worked out. Rest of Phase 3 (LLM client, Kafka consumer wiring)
+  will likely stay test-after for the same reasons as Phase 2.
 - `MessageEventConsumer` is currently a same-service stub (consumer lives in
   `chat-service`, per the Phase 2 plan's "can be same service initially").
   Phase 3 needs a decision: keep the consumer in `chat-service` and have it

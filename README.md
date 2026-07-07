@@ -59,10 +59,13 @@ Running tests requires Docker (Testcontainers spins up a real Postgres container
 ./mvnw test
 ```
 
-> **Note:** `chat-service` currently depends on both Jackson 2 and Jackson 3 —
-> intentional, not a bug. Spring Boot 4.1 uses Jackson 3 internally, but Spring
-> Kafka's `JsonSerializer`/`JsonDeserializer` still require Jackson 2 at runtime.
-> See `phase-2-status-note.md` for details before "cleaning up" the `pom.xml`.
+> **Note:** `chat-service` runs on Jackson 3 only. Kafka (de)serialization
+> uses Spring Kafka's `JacksonJsonSerializer`/`JacksonJsonDeserializer`
+> (Jackson-3-native) rather than the deprecated `JsonSerializer`/
+> `JsonDeserializer` classes — the latter require Jackson 2 and pulled in a
+> confusing dependency detour during Phase 2. See `phase-2-status-note.md`
+> for the full story before reintroducing any `com.fasterxml.jackson.*`
+> dependency.
 
 ## Repo structure
 ```
