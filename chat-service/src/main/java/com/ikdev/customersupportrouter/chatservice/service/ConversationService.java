@@ -1,6 +1,7 @@
 package com.ikdev.customersupportrouter.chatservice.service;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +52,7 @@ public class ConversationService {
         Message message = new Message();
         message.setContent(content);
         message.setSender(sender);
+        message.setTraceId(UUID.randomUUID());
         conversation.addMessage(message);
         messageRepository.save(message);
         conversationRepository.save(conversation);

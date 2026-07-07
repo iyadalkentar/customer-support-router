@@ -1,6 +1,7 @@
 package com.ikdev.customersupportrouter.chatservice.event;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 /**
  * Full‑payload representation of a message that will be sent to Kafka.
@@ -12,8 +13,8 @@ public record MessageEvent(
         String sender,
         String content,
         OffsetDateTime createdAt,
-        int eventVersion
-) {
+        int eventVersion,
+        UUID traceId) {
     private static final int CURRENT_VERSION = 1;
 
     public static MessageEvent from(com.ikdev.customersupportrouter.chatservice.entity.Message message) {
@@ -23,7 +24,7 @@ public record MessageEvent(
                 message.getSender(),
                 message.getContent(),
                 message.getCreatedAt(),
-                CURRENT_VERSION
-        );
+                CURRENT_VERSION,
+                message.getTraceId());
     }
 }

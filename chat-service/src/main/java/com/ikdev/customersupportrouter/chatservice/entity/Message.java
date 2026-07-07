@@ -5,6 +5,8 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
+
 
 /**
  * JPA entity representing the {@code messages} table.
@@ -36,4 +38,16 @@ public class Message {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
+
+    @Column(length = 50)
+    private String intent;
+
+    @Column(length = 50)
+    private String sentiment;
+
+    @Column(length = 50)
+    private String urgency;
+
+    @Column(name = "trace_id")
+    private UUID traceId;
 }
