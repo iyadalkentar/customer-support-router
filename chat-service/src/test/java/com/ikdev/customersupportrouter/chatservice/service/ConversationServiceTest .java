@@ -3,15 +3,19 @@ package com.ikdev.customersupportrouter.chatservice.service;
 import com.ikdev.customersupportrouter.chatservice.entity.Conversation;
 import com.ikdev.customersupportrouter.chatservice.entity.ConversationStatus;
 import com.ikdev.customersupportrouter.chatservice.entity.Message;
+import com.ikdev.customersupportrouter.chatservice.event.MessageEvent;
+import com.ikdev.customersupportrouter.chatservice.event.MessagePersistedEvent;
 import com.ikdev.customersupportrouter.chatservice.exception.ConversationClosedException;
 import com.ikdev.customersupportrouter.chatservice.exception.ConversationNotFoundException;
 import com.ikdev.customersupportrouter.chatservice.repository.ConversationRepository;
 import com.ikdev.customersupportrouter.chatservice.repository.MessageRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Optional;
 
@@ -28,6 +32,9 @@ class ConversationServiceTest {
 
     @Mock
     private MessageRepository messageRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private ConversationService conversationService;
@@ -91,5 +98,49 @@ class ConversationServiceTest {
         assertThat(result.getContent()).isEqualTo("hello");
         assertThat(result.getConversation()).isSameAs(conversation);
         verify(messageRepository).save(result);
+    }
+
+    // --- New in Phase 2: event publishing ---
+    //
+    // Note: this is a plain Mockito unit test, so it only proves that
+    // ConversationService calls publishEvent(...) with the right payload.
+    // It does NOT exercise the @TransactionalEventListener(AFTER_COMMIT)
+    // guarantee on the consumer side (MessageEventPublisher) — that behavior
+    // is only meaningfully covered by MessageFlowIntegrationTest, which runs
+    // against a real transaction manager and a real Kafka broker.
+
+    @Test
+    void addMessageToConversation_publishesMessagePersistedEvent() {
+        Conversation conversation = new Conversation();
+        conversation.setId(1L);
+        conversation.setStatus(ConversationStatus.ACTIVE);
+        when(conversationRepository.findById(1L)).thenReturn(Optional.of(conversation));
+        when(messageRepository.save(any(Message.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Message result = conversationService.addMessageToConversation(1L, "customer", "hello");
+
+        ArgumentCaptor<MessagePersistedEvent> eventCaptor =
+                ArgumentCaptor.forClass(MessagePersistedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+
+        MessageEvent publishedEvent = eventCaptor.getValue().getMessageEvent();
+        assertThat(publishedEvent.conversationId()).isEqualTo(1L);
+        assertThat(publishedEvent.sender()).isEqualTo("customer");
+        assertThat(publishedEvent.content()).isEqualTo("hello");
+        assertThat(publishedEvent.messageId()).isEqualTo(result.getId());
+    }
+
+    @Test
+    void getOrCreateConversation_doesNotPublishAnyEvent() {
+        // Guards against accidentally firing a MessagePersistedEvent before a
+        // message actually exists (e.g. if event publishing were moved earlier
+        // into getOrCreateConversation by mistake in a future refactor).
+        when(conversationRepository.save(any(Conversation.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        conversationService.getOrCreateConversation(null);
+
+        verifyNoInteractions(eventPublisher);
     }
 }
