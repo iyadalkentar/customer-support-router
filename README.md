@@ -6,7 +6,7 @@ or ticket creation. Built as a portfolio project demonstrating AI-in-the-loop di
 systems — messaging, caching, and observability included end-to-end.
 
 ## Status
-✅ **Phase 1 (Foundations) complete** — starting **Phase 2 (Kafka wiring)** next.
+✅ **Phase 2 (Kafka wiring) complete** — starting **Phase 3 (AI classification service)** next.
 
 - [x] Repo scaffolding
 - [x] `chat-service` skeleton (Spring Boot 4.1)
@@ -15,7 +15,9 @@ systems — messaging, caching, and observability included end-to-end.
 - [x] `POST /messages` ingest endpoint
 - [x] `GET /conversations/{id}/messages` read-back endpoint
 - [x] Unit + integration tests (Testcontainers)
-- [ ] Kafka wiring
+- [x] Kafka wiring (KRaft mode, no Zookeeper)
+- [x] Transactional outbox-style event publishing (`AFTER_COMMIT`)
+- [x] Stub consumer on `incoming-messages`
 - [ ] AI classification service
 - [ ] Routing/escalation logic
 - [ ] Conversation memory (Redis)
@@ -23,8 +25,10 @@ systems — messaging, caching, and observability included end-to-end.
 - [ ] React frontend
 
 See [`customer-support-router-plan.md`](./customer-support-router-plan.md) for the full
-architecture and phased build plan, and [`phase-1-status-note.md`](./phase-1-status-note.md)
-for build notes, key decisions, and open questions carried into Phase 2.
+architecture and phased build plan, [`phase-1-status-note.md`](./phase-1-status-note.md)
+for Phase 1 build notes and decisions, and
+[`phase-2-status-note.md`](./phase-2-status-note.md) for Phase 2 build notes, the
+Jackson 2/3 coexistence issue, and open questions carried into Phase 3.
 
 ## Architecture (target)
 ```
@@ -32,14 +36,20 @@ React → Spring Boot (chat-service) → Kafka → AI Classifier Service → Rou
 Redis (memory) / Postgres (source of truth) → Prometheus + Grafana
 ```
 
+Kafka runs in KRaft combined mode (`apache/kafka:3.9.0`, broker + controller roles) —
+no Zookeeper. Messages are persisted to Postgres first; a Kafka event carrying the full
+message payload is published only after the DB transaction commits
+(`@TransactionalEventListener(phase = AFTER_COMMIT)`), keyed by `conversationId` for
+per-conversation ordering.
+
 ## Tech stack
-Spring Boot · Kafka · Redis · PostgreSQL · Docker Compose · Ollama (dev) / OpenAI /
+Spring Boot · Kafka (KRaft) · Redis · PostgreSQL · Docker Compose · Ollama (dev) / OpenAI /
 Anthropic (swappable) · React · Prometheus + Grafana
 
 ## Running locally
 ```bash
 cp .env.example .env   # fill in local credentials
-docker compose up -d postgres
+docker compose up -d postgres kafka
 cd chat-service
 ./mvnw spring-boot:run
 ```
@@ -49,12 +59,19 @@ Running tests requires Docker (Testcontainers spins up a real Postgres container
 ./mvnw test
 ```
 
+> **Note:** `chat-service` currently depends on both Jackson 2 and Jackson 3 —
+> intentional, not a bug. Spring Boot 4.1 uses Jackson 3 internally, but Spring
+> Kafka's `JsonSerializer`/`JsonDeserializer` still require Jackson 2 at runtime.
+> See `phase-2-status-note.md` for details before "cleaning up" the `pom.xml`.
+
 ## Repo structure
 ```
 customer-support-router/
-├── chat-service/          Spring Boot: ingest, REST, Postgres
+├── chat-service/          Spring Boot: ingest, REST, Postgres, Kafka producer/consumer
 ├── ai-classifier-service/ Spring Boot: LLM calls, classification (not yet started)
 ├── frontend/              React chat UI (not yet started)
-├── docker-compose.yml
-└── customer-support-router-plan.md
+├── docker-compose.yml     Postgres + Kafka (KRaft)
+├── customer-support-router-plan.md
+├── phase-1-status-note.md
+└── phase-2-status-note.md
 ```
