@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: ai-classifier-service
+
+  ai:
+    model:
+      chat: none
+      audio:
+        speech: none
+        transcription: none
+      embedding: none
+      image: none
+      moderation: none
+
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      base-url: "https://integrate.api.nvidia.com/v1"
+      chat:
+        model: z-ai/glm-5.2
+
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: qwen2.5-coder:1.5b-instruct
+
+llm:
+  provider: ollama
