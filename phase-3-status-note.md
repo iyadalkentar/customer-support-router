@@ -134,6 +134,16 @@ original plan note.
   to what's already on the row. Re-setting adds noise and would mask the
   hypothetical future "incoming result's traceId doesn't match the row's"
   bug signal.
+- **HTTP actuator requires adding `spring-boot-starter-web` to
+  `ai-classifier-service` and pinning `server.port: 8083`** even though the
+  classifier module has no public REST API. The Phase 3 plan didn't call
+  for a status URL on the classifier; this was added at the end of the
+  phase because Phase 6 (Prometheus/Grafana) needs an HTTP actuator
+  endpoint to scrape. Pulls in Tomcat on a Kafka-only service — accepted as
+  the cost of having a status URL and to mirror chat-service's
+  `server.port: 8081` pattern. The actuator's default `/actuator/health`
+  exposure is what Phase 6 will pulse; broader endpoint exposure
+  (`metrics`, `env`) stays off until then.
 
 ### Still deferred (per the original plan note)
 

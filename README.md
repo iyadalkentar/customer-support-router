@@ -6,19 +6,20 @@ or ticket creation. Built as a portfolio project demonstrating AI-in-the-loop di
 systems — messaging, caching, and observability included end-to-end.
 
 ## Status
-✅ **Phase 2 (Kafka wiring) complete** — starting **Phase 3 (AI classification service)** next.
+✅ **Phase 3 (AI classification service + closing leg) complete** — starting **Phase 4 (routing/escalation, TDD)** next.
 
 - [x] Repo scaffolding
 - [x] `chat-service` skeleton (Spring Boot 4.1)
 - [x] Postgres via Docker Compose
 - [x] Schema migrations (Flyway)
 - [x] `POST /messages` ingest endpoint
-- [x] `GET /conversations/{id}/messages` read-back endpoint
+- [x] `GET /conversations/{id}/messages` read-back endpoint (now exposes `intent` / `sentiment` / `urgency`)
 - [x] Unit + integration tests (Testcontainers)
 - [x] Kafka wiring (KRaft mode, no Zookeeper)
 - [x] Transactional outbox-style event publishing (`AFTER_COMMIT`)
-- [x] Stub consumer on `incoming-messages`
-- [ ] AI classification service
+- [x] `ai-classifier-service` — LLM-backed `LlmClient` with retry + bounded timeout + UNKNOWN/NEUTRAL fallback on classifier failure
+- [x] Closing leg: `chat-service` consumes `classification-results` and updates `Message` columns
+- [x] End-to-end integration test for the classification round-trip
 - [ ] Routing/escalation logic
 - [ ] Conversation memory (Redis)
 - [ ] Observability (Prometheus/Grafana)
@@ -26,9 +27,11 @@ systems — messaging, caching, and observability included end-to-end.
 
 See [`customer-support-router-plan.md`](./customer-support-router-plan.md) for the full
 architecture and phased build plan, [`phase-1-status-note.md`](./phase-1-status-note.md)
-for Phase 1 build notes and decisions, and
-[`phase-2-status-note.md`](./phase-2-status-note.md) for Phase 2 build notes, the
-Jackson 2/3 coexistence issue, and open questions carried into Phase 3.
+for Phase 1 build notes and decisions,
+[`phase-2-status-note.md`](./phase-2-status-note.md) for Phase 2 build notes and the
+Jackson 2/3 coexistence fix, and
+[`phase-3-status-note.md`](./phase-3-status-note.md) for Phase 3 build notes, the
+closing leg, and items deferred into Phase 4+.
 
 ## Architecture (target)
 ```
@@ -50,8 +53,14 @@ Anthropic (swappable) · React · Prometheus + Grafana
 ```bash
 cp .env.example .env   # fill in local credentials
 docker compose up -d postgres kafka
+
+# Terminal 1 — chat-service on :8081
 cd chat-service
-./mvnw spring-boot:run
+mvn spring-boot:run
+
+# Terminal 2 — ai-classifier-service on :8083
+cd ai-classifier-service
+mvn spring-boot:run
 ```
 
 Running tests requires Docker (Testcontainers spins up a real Postgres container):
@@ -70,8 +79,8 @@ Running tests requires Docker (Testcontainers spins up a real Postgres container
 ## Repo structure
 ```
 customer-support-router/
-├── chat-service/          Spring Boot: ingest, REST, Postgres, Kafka producer/consumer
-├── ai-classifier-service/ Spring Boot: LLM calls, classification (not yet started)
+├── chat-service/          Spring Boot: ingest, REST, Postgres, Kafka producer/consumer, classification read-back
+├── ai-classifier-service/ Spring Boot: LLM-backed classification, Kafka consumer/publisher
 ├── frontend/              React chat UI (not yet started)
 ├── docker-compose.yml     Postgres + Kafka (KRaft)
 ├── customer-support-router-plan.md
