@@ -19,12 +19,16 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
     consumer:
-      group-id: chat-service-group
+      group-id: chat-classification-results-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
       properties:
         spring.json.trusted.packages: com.ikdev.customersupportrouter.chatservice.event
-        spring.json.value.default.type: com.ikdev.customersupportrouter.chatservice.event.MessageEvent
+        # chat-service listens only on classification-results now (incoming-messages is
+        # owned by ai-classifier-service). The default type tells the deserializer
+        # which record shape to land on when no type header is present.
+        spring.json.value.default.type: com.ikdev.customersupportrouter.chatservice.event.ClassificationResult
+        spring.json.use.type.headers: false
 server:
   port: 8081

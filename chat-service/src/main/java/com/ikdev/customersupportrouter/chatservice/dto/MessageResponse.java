@@ -9,10 +9,14 @@ public record MessageResponse(
                 Long conversationId,
                 String sender,
                 String content,
-                OffsetDateTime createdAt) {
+                OffsetDateTime createdAt,
+                String intent,
+                String sentiment,
+                String urgency) {
 
         public static MessageResponse from(Message message) {
                 return new MessageResponse(message.getId(), message.getConversation().getId(),
-                                message.getSender(), message.getContent(), message.getCreatedAt());
+                                message.getSender(), message.getContent(), message.getCreatedAt(),
+                                message.getIntent(), message.getSentiment(), message.getUrgency());
         }
 }
