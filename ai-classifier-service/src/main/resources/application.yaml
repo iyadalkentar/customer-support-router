@@ -2,6 +2,23 @@ spring:
   application:
     name: ai-classifier-service
 
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+    consumer:
+      group-id: ai-classifier-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+      properties:
+        # Not actively enforced while use.type.headers=false (no header-derived class
+        # name to check), but kept as a documented allowlist in case that ever changes.
+        spring.json.trusted.packages: com.ikdev.customersupportrouter.aiclassifierservice.event
+        spring.json.value.default.type: com.ikdev.customersupportrouter.aiclassifierservice.event.MessageEvent
+        spring.json.use.type.headers: false
+
   ai:
     model:
       chat: none
@@ -25,3 +42,16 @@ spring:
 
 llm:
   provider: ollama
+  prompt:
+    default: |
+      Classify the following customer message.
+
+      Determine:
+      - intent
+      - sentiment
+      - urgency
+
+      Return the classification fields only.
+
+      Message:
+      {message}

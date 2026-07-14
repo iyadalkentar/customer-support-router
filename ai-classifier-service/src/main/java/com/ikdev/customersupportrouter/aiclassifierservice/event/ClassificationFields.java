@@ -1,4 +1,4 @@
-package com.ikdev.customersupportrouter.aiclassifierservice.model;
+package com.ikdev.customersupportrouter.aiclassifierservice.event;
 
 public record ClassificationFields(
         String intent,

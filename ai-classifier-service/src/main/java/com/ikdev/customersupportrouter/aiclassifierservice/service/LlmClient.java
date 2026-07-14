@@ -1,7 +1,7 @@
 package com.ikdev.customersupportrouter.aiclassifierservice.service;
 
-import com.ikdev.customersupportrouter.aiclassifierservice.model.ClassificationResult;
+import com.ikdev.customersupportrouter.aiclassifierservice.event.ClassificationFields;
 
 public interface LlmClient {
-    ClassificationResult classify(String prompt);
+    ClassificationFields classify(String prompt);
 }
