@@ -6,7 +6,7 @@ or ticket creation. Built as a portfolio project demonstrating AI-in-the-loop di
 systems — messaging, caching, and observability included end-to-end.
 
 ## Status
-✅ **Phase 3 (AI classification service + closing leg) complete** — starting **Phase 4 (routing/escalation, TDD)** next.
+✅ **Phase 4 (routing/escalation, TDD) complete** — starting **Phase 5 (Redis conversation memory)** next.
 
 - [x] Repo scaffolding
 - [x] `chat-service` skeleton (Spring Boot 4.1)
@@ -20,7 +20,7 @@ systems — messaging, caching, and observability included end-to-end.
 - [x] `ai-classifier-service` — LLM-backed `LlmClient` with retry + bounded timeout + UNKNOWN/NEUTRAL fallback on classifier failure
 - [x] Closing leg: `chat-service` consumes `classification-results` and updates `Message` columns
 - [x] End-to-end integration test for the classification round-trip
-- [ ] Routing/escalation logic
+- [x] Routing/escalation logic (TDD — `AUTO_RESPOND` / `ESCALATE_TO_HUMAN` / `CREATE_TICKET`, one OPEN ticket per conversation, `escalations` topic)
 - [ ] Conversation memory (Redis)
 - [ ] Observability (Prometheus/Grafana)
 - [ ] React frontend
@@ -31,7 +31,9 @@ for Phase 1 build notes and decisions,
 [`phase-2-status-note.md`](./phase-2-status-note.md) for Phase 2 build notes and the
 Jackson 2/3 coexistence fix, and
 [`phase-3-status-note.md`](./phase-3-status-note.md) for Phase 3 build notes, the
-closing leg, and items deferred into Phase 4+.
+closing leg, and items deferred into Phase 4+, and
+[`phase-4-status-note.md`](./phase-4-status-note.md) for Phase 4 routing/escalation
+build notes, the rule table, and the one-OPEN-ticket-per-conversation decision.
 
 ## Architecture (target)
 ```

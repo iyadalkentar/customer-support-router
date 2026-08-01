@@ -31,13 +31,19 @@ public class ClassificationService {
         this.messageRepository = messageRepository;
     }
 
+    /**
+     * Applies the classification fields to the message row and returns the
+     * managed {@link Message}, so the caller ({@link RoutingService}) can
+     * route it in the same transaction. Returns {@link Optional#empty()} when
+     * the {@code messageId} is unknown (already logged + dropped).
+     */
     @Transactional
-    public void applyClassification(ClassificationResult result) {
+    public Optional<Message> applyClassification(ClassificationResult result) {
         Optional<Message> maybeMessage = messageRepository.findById(result.messageId());
         if (maybeMessage.isEmpty()) {
             log.warn("Classification received for unknown messageId={} (conversationId={}, traceId={}); dropping",
                     result.messageId(), result.conversationId(), result.traceId());
-            return;
+            return Optional.empty();
         }
 
         Message message = maybeMessage.get();
@@ -48,5 +54,6 @@ public class ClassificationService {
         // publishes it) and the ClassificationResult carries the same value back.
         // Re-setting on every event would be a no-op.
         messageRepository.save(message);
+        return Optional.of(message);
     }
 }

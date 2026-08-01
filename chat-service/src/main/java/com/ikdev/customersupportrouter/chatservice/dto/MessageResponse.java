@@ -12,11 +12,14 @@ public record MessageResponse(
                 OffsetDateTime createdAt,
                 String intent,
                 String sentiment,
-                String urgency) {
+                String urgency,
+                String routingDecision) {
 
         public static MessageResponse from(Message message) {
                 return new MessageResponse(message.getId(), message.getConversation().getId(),
                                 message.getSender(), message.getContent(), message.getCreatedAt(),
-                                message.getIntent(), message.getSentiment(), message.getUrgency());
+                                message.getIntent(), message.getSentiment(), message.getUrgency(),
+                                message.getRoutingDecision() == null ? null
+                                                : message.getRoutingDecision().name());
         }
 }

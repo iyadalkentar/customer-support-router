@@ -36,6 +36,17 @@ public class MessageEventPublisher {
                 event.conversationId());
         // Using the KafkaTemplate with key/value serializers (configured in
         // application.yml)
-        kafkaTemplate.send(TOPIC, key, event);
+        // Best-effort publish (same exposure as EscalationEventPublisher): on
+        // failure log loudly for manual republish rather than throw out of the
+        // AFTER_COMMIT callback.
+        kafkaTemplate.send(TOPIC, key, event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("MessageEvent publish FAILED — manual republish needed. "
+                                + "messageId={}, conversationId={}. The message was not forwarded "
+                                + "to ai-classifier-service for classification.",
+                                event.messageId(), event.conversationId(), ex);
+                    }
+                });
     }
 }

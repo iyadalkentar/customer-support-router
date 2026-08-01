@@ -50,4 +50,8 @@ public class Message {
 
     @Column(name = "trace_id")
     private UUID traceId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "routing_decision", length = 50)
+    private RoutingDecision routingDecision;
 }
