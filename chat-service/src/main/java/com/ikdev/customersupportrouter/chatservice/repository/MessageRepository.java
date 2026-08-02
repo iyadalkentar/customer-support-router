@@ -10,7 +10,14 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MessageRepository extends JpaRepository<Message, Long> {
-    List<Message> findByConversationIdOrderByCreatedAtAsc(Long conversationId);
+    /**
+     * Oldest-first by commit order, with {@code id} as a deterministic tiebreak.
+     * {@code createdAt} is Postgres-microsecond precision while the Java value is
+     * nanosecond, so near-simultaneous inserts can tie on timestamp alone; without
+     * the secondary sort the order (and therefore the Redis backfill window) would
+     * be nondeterministic. Ids are sequential, so {@code id ASC} equals commit order.
+     */
+    List<Message> findByConversationIdOrderByCreatedAtAscIdAsc(Long conversationId);
 
     /**
      * Whether any message in the conversation (other than the given one) still

@@ -6,7 +6,7 @@ or ticket creation. Built as a portfolio project demonstrating AI-in-the-loop di
 systems — messaging, caching, and observability included end-to-end.
 
 ## Status
-✅ **Phase 4 (routing/escalation, TDD) complete** — starting **Phase 5 (Redis conversation memory)** next.
+✅ **Phase 5 (Redis conversation memory) complete** — starting **Phase 6 (observability)** next.
 
 - [x] Repo scaffolding
 - [x] `chat-service` skeleton (Spring Boot 4.1)
@@ -21,7 +21,7 @@ systems — messaging, caching, and observability included end-to-end.
 - [x] Closing leg: `chat-service` consumes `classification-results` and updates `Message` columns
 - [x] End-to-end integration test for the classification round-trip
 - [x] Routing/escalation logic (TDD — `AUTO_RESPOND` / `ESCALATE_TO_HUMAN` / `CREATE_TICKET`, one OPEN ticket per conversation, `escalations` topic)
-- [ ] Conversation memory (Redis)
+- [x] Conversation memory (Redis)
 - [ ] Observability (Prometheus/Grafana)
 - [ ] React frontend
 
@@ -33,7 +33,9 @@ Jackson 2/3 coexistence fix, and
 [`phase-3-status-note.md`](./phase-3-status-note.md) for Phase 3 build notes, the
 closing leg, and items deferred into Phase 4+, and
 [`phase-4-status-note.md`](./phase-4-status-note.md) for Phase 4 routing/escalation
-build notes, the rule table, and the one-OPEN-ticket-per-conversation decision.
+build notes, the rule table, and the one-OPEN-ticket-per-conversation decision, and
+[`phase-5-status-note.md`](./phase-5-status-note.md) for Phase 5 Redis conversation
+memory build notes.
 
 ## Architecture (target)
 ```
@@ -54,7 +56,7 @@ Anthropic (swappable) · React · Prometheus + Grafana
 ## Running locally
 ```bash
 cp .env.example .env   # fill in local credentials
-docker compose up -d postgres kafka
+docker compose up -d postgres kafka redis
 
 # Terminal 1 — chat-service on :8081
 cd chat-service
@@ -65,7 +67,7 @@ cd ai-classifier-service
 mvn spring-boot:run
 ```
 
-Running tests requires Docker (Testcontainers spins up a real Postgres container):
+Running tests requires Docker (Testcontainers spins up real Postgres/Kafka/Redis containers):
 ```bash
 ./mvnw test
 ```
@@ -84,7 +86,7 @@ customer-support-router/
 ├── chat-service/          Spring Boot: ingest, REST, Postgres, Kafka producer/consumer, classification read-back
 ├── ai-classifier-service/ Spring Boot: LLM-backed classification, Kafka consumer/publisher
 ├── frontend/              React chat UI (not yet started)
-├── docker-compose.yml     Postgres + Kafka (KRaft)
+├── docker-compose.yml     Postgres + Kafka (KRaft) + Redis
 ├── customer-support-router-plan.md
 ├── phase-1-status-note.md
 └── phase-2-status-note.md

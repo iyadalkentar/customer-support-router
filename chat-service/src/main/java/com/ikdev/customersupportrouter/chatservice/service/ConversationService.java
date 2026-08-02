@@ -64,6 +64,6 @@ public class ConversationService {
     public List<Message> getConversationMessages(Long conversationId) {
         if (!conversationRepository.existsById(conversationId))
             throw new ConversationNotFoundException(conversationId);
-        return messageRepository.findByConversationIdOrderByCreatedAtAsc(conversationId);
+        return messageRepository.findByConversationIdOrderByCreatedAtAscIdAsc(conversationId);
     }
 }

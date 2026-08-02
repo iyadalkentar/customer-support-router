@@ -2,6 +2,8 @@ package com.ikdev.customersupportrouter.aiclassifierservice.service;
 
 import com.ikdev.customersupportrouter.aiclassifierservice.config.LlmPromptProperties;
 import com.ikdev.customersupportrouter.aiclassifierservice.event.ClassificationFields;
+import com.ikdev.customersupportrouter.aiclassifierservice.memory.ConversationContextFormatter;
+import com.ikdev.customersupportrouter.aiclassifierservice.memory.ConversationContextMessage;
 import jakarta.annotation.PreDestroy;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
@@ -10,6 +12,7 @@ import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,14 +38,17 @@ public class ChatModelService implements LlmClient {
 
     private final ChatClient chatClient;
     private final String classificationPrompt;
+    private final ConversationContextFormatter contextFormatter;
     private final Duration llmTimeout;
     private final ExecutorService llmCalls;
 
     public ChatModelService(
             ChatModel chatModel,
             LlmPromptProperties llmPromptProperties,
+            ConversationContextFormatter contextFormatter,
             @Value("${llm.timeout:10s}") Duration llmTimeout) {
         this.classificationPrompt = llmPromptProperties.resolve(chatModel.getOptions().getModel());
+        this.contextFormatter = contextFormatter;
         this.chatClient = ChatClient.builder(chatModel).build();
         this.llmTimeout = llmTimeout;
         // Bounded pool: at most one in-flight classify call per worker, capped at the
@@ -59,10 +65,13 @@ public class ChatModelService implements LlmClient {
 
     @Override
     @Retryable(value = Exception.class, maxRetries = 1)
-    public ClassificationFields classify(String content) {
+    public ClassificationFields classify(String content, List<ConversationContextMessage> context) {
+        String contextText = contextFormatter.format(context);
         Future<ClassificationFields> future = llmCalls.submit(() ->
                 chatClient.prompt()
-                        .user(u -> u.text(classificationPrompt).param("message", content))
+                        .user(u -> u.text(classificationPrompt)
+                                .param("message", content)
+                                .param("context", contextText))
                         .call()
                         .entity(ClassificationFields.class));
 
