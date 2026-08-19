@@ -71,7 +71,7 @@ conversation:
     enabled: true
 
 llm:
-  provider: ollama
+  provider: gemini
   timeout: 60s
   prompt:
     default: |
