@@ -50,6 +50,16 @@ spring:
 server:
   port: 8083
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
 conversation:
   memory:
     size: 10

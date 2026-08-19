@@ -41,16 +41,22 @@ public class ChatModelService implements LlmClient {
     private final ConversationContextFormatter contextFormatter;
     private final Duration llmTimeout;
     private final ExecutorService llmCalls;
+    private final String provider;
+    private final ClassificationMetrics classificationMetrics;
 
     public ChatModelService(
             ChatModel chatModel,
             LlmPromptProperties llmPromptProperties,
             ConversationContextFormatter contextFormatter,
+            ClassificationMetrics classificationMetrics,
+            @Value("${llm.provider:unknown}") String provider,
             @Value("${llm.timeout:10s}") Duration llmTimeout) {
         this.classificationPrompt = llmPromptProperties.resolve(chatModel.getOptions().getModel());
         this.contextFormatter = contextFormatter;
         this.chatClient = ChatClient.builder(chatModel).build();
         this.llmTimeout = llmTimeout;
+        this.provider = provider;
+        this.classificationMetrics = classificationMetrics;
         // Bounded pool: at most one in-flight classify call per worker, capped at the
         // machine's available cores (min 2). Backpressure queues callers above that.
         AtomicInteger idx = new AtomicInteger();
@@ -67,6 +73,8 @@ public class ChatModelService implements LlmClient {
     @Retryable(value = Exception.class, maxRetries = 1)
     public ClassificationFields classify(String content, List<ConversationContextMessage> context) {
         String contextText = contextFormatter.format(context);
+        long startNanos = System.nanoTime();
+
         Future<ClassificationFields> future = llmCalls.submit(() ->
                 chatClient.prompt()
                         .user(u -> u.text(classificationPrompt)
@@ -76,7 +84,15 @@ public class ChatModelService implements LlmClient {
                         .entity(ClassificationFields.class));
 
         try {
-            return future.get(llmTimeout.toMillis(), TimeUnit.MILLISECONDS);
+            ClassificationFields fields = future.get(llmTimeout.toMillis(), TimeUnit.MILLISECONDS);
+            // Recorded only here, not in a catch/finally: a failing attempt gets
+            // retried by @Retryable, and the terminal (post-retry) outcome is what
+            // MessageEventConsumer records once retries are exhausted — recording
+            // "timeout"/"fallback" per attempt here would mislabel an attempt that
+            // was ultimately retried into success.
+            classificationMetrics.recordClassification(provider, "success",
+                    Duration.ofNanos(System.nanoTime() - startNanos));
+            return fields;
         } catch (TimeoutException e) {
             future.cancel(true); // interrupts the worker; frees the executor slot
             throw new LlmTimeoutException("LLM call exceeded " + llmTimeout, e);

@@ -2,6 +2,7 @@ package com.ikdev.customersupportrouter.chatservice.kafka;
 
 import com.ikdev.customersupportrouter.chatservice.event.MessageEvent;
 import com.ikdev.customersupportrouter.chatservice.event.MessagePersistedEvent;
+import com.ikdev.customersupportrouter.chatservice.service.MessageMetrics;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,14 +24,19 @@ public class MessageEventPublisher {
     private static final String TOPIC = "incoming-messages";
 
     private final KafkaTemplate<String, MessageEvent> kafkaTemplate;
+    private final MessageMetrics messageMetrics;
 
-    public MessageEventPublisher(KafkaTemplate<String, MessageEvent> kafkaTemplate) {
+    public MessageEventPublisher(KafkaTemplate<String, MessageEvent> kafkaTemplate, MessageMetrics messageMetrics) {
         this.kafkaTemplate = kafkaTemplate;
+        this.messageMetrics = messageMetrics;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onMessagePersisted(MessagePersistedEvent persistedEvent) {
         MessageEvent event = persistedEvent.getMessageEvent();
+        // Fired only after the enclosing transaction commits, so the counter can't
+        // overcount a message that was recorded here but never actually persisted.
+        messageMetrics.recordIngest("success");
         String key = String.valueOf(event.conversationId()); // partition by conversation
         log.info("Publishing MessageEvent to Kafka: messageId={}, conversationId={}", event.messageId(),
                 event.conversationId());

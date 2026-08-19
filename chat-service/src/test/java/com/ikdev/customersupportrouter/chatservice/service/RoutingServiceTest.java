@@ -36,6 +36,9 @@ class RoutingServiceTest {
     @Mock
     private EscalationService escalationService;
 
+    @Mock
+    private RoutingMetrics routingMetrics;
+
     @InjectMocks
     private RoutingService routingService;
 

@@ -35,13 +35,16 @@ public class RoutingService {
     private final RoutingPolicy routingPolicy;
     private final MessageRepository messageRepository;
     private final EscalationService escalationService;
+    private final RoutingMetrics routingMetrics;
 
     public RoutingService(ClassificationService classificationService, RoutingPolicy routingPolicy,
-            MessageRepository messageRepository, EscalationService escalationService) {
+            MessageRepository messageRepository, EscalationService escalationService,
+            RoutingMetrics routingMetrics) {
         this.classificationService = classificationService;
         this.routingPolicy = routingPolicy;
         this.messageRepository = messageRepository;
         this.escalationService = escalationService;
+        this.routingMetrics = routingMetrics;
     }
 
     @Transactional
@@ -62,6 +65,7 @@ public class RoutingService {
             // No change — at-least-once redelivery no-op (also avoids re-escalation).
         } else if (decision.isEscalation()) {
             escalationService.escalate(message, decision);
+            routingMetrics.recordEscalation(decision);
         } else if (previous != null && previous.isEscalation()) {
             // De-escalation: a corrected/re-classified message no longer escalates;
             // close the conversation's OPEN ticket once no message still escalates.

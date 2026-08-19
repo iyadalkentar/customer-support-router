@@ -2,6 +2,7 @@ package com.ikdev.customersupportrouter.chatservice.kafka;
 
 import com.ikdev.customersupportrouter.chatservice.event.MessageEvent;
 import com.ikdev.customersupportrouter.chatservice.event.MessagePersistedEvent;
+import com.ikdev.customersupportrouter.chatservice.service.MessageMetrics;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -24,6 +25,9 @@ class MessageEventPublisherTest {
 
         @Mock
         private KafkaTemplate<String, MessageEvent> kafkaTemplate;
+
+        @Mock
+        private MessageMetrics messageMetrics;
 
         @InjectMocks
         private MessageEventPublisher messageEventPublisher;

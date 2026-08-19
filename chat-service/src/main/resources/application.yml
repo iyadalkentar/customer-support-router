@@ -41,6 +41,16 @@ spring:
 server:
   port: 8081
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
 conversation:
   memory:
     size: 10

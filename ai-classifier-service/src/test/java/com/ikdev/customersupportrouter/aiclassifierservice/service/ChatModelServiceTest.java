@@ -26,6 +26,9 @@ import com.ikdev.customersupportrouter.aiclassifierservice.event.ClassificationF
 import com.ikdev.customersupportrouter.aiclassifierservice.memory.ConversationContextFormatter;
 import com.ikdev.customersupportrouter.aiclassifierservice.memory.ConversationContextMessage;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+
 /**
  * Locks the {@code {context}} placeholder ↔ {@code .param("context", ...)} wiring end to
  * end: {@link ChatModelService} must render the real {@code application.yaml} prompt
@@ -85,8 +88,10 @@ class ChatModelServiceTest {
     private static ChatModelService service(ChatModel chatModel) throws IOException {
         LlmPromptProperties promptProperties = new LlmPromptProperties();
         promptProperties.setDefault(loadDefaultPromptTemplate());
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
+        ClassificationMetrics classificationMetrics = new ClassificationMetrics(meterRegistry);
         return new ChatModelService(chatModel, promptProperties, new ConversationContextFormatter(),
-                Duration.ofSeconds(5));
+                classificationMetrics, "test-provider", Duration.ofSeconds(5));
     }
 
     private static ChatResponse chatResponse(String intent, String sentiment, String urgency) {
