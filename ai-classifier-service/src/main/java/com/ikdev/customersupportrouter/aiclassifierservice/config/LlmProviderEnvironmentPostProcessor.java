@@ -24,9 +24,22 @@ public class LlmProviderEnvironmentPostProcessor implements EnvironmentPostProce
                             new MapPropertySource(
                                     "llm-provider",
                                     Map.of("spring.ai.model.chat", provider)));
+            case "gemini" -> {
+                // Validate that GEMINI_API_KEY is set
+                String apiKey = environment.getProperty("GEMINI_API_KEY");
+                if (apiKey == null || apiKey.isBlank()) {
+                    throw new IllegalStateException(
+                            "GEMINI_API_KEY environment variable must be set when llm.provider=gemini");
+                }
+                // Map app-facing "gemini" to Spring AI's "google-genai" selector value
+                environment.getPropertySources().addFirst(
+                        new MapPropertySource(
+                                "llm-provider",
+                                Map.of("spring.ai.model.chat", "google-genai")));
+            }
             default ->
                     throw new IllegalStateException(
-                            "Unsupported llm.provider: " + provider);
+                            "Unsupported llm.provider: " + provider + " (supported: ollama, openai, gemini)");
         }
 
     }
