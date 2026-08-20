@@ -6,8 +6,8 @@ or ticket creation. Built as a portfolio project demonstrating AI-in-the-loop di
 systems — messaging, caching, and observability included end-to-end.
 
 ## Status
-✅ **Phase 6 (observability) dashboards/infrastructure in place** — tests and docs for it still
-outstanding; **Phase 7 (React frontend)** next.
+✅ **Phase 6 (observability) complete** — Prometheus/Grafana dashboards, Gemini LLM
+provider, and metrics test coverage all in place; **Phase 7 (React frontend)** next.
 
 - [x] Repo scaffolding
 - [x] `chat-service` skeleton (Spring Boot 4.1)
@@ -36,7 +36,9 @@ closing leg, and items deferred into Phase 4+, and
 [`phase-4-status-note.md`](./phase-4-status-note.md) for Phase 4 routing/escalation
 build notes, the rule table, and the one-OPEN-ticket-per-conversation decision, and
 [`phase-5-status-note.md`](./phase-5-status-note.md) for Phase 5 Redis conversation
-memory build notes.
+memory build notes, and
+[`phase-6-status-note.md`](./phase-6-status-note.md) for Phase 6 observability
+build notes and the Gemini provider swap.
 
 ## Architecture (target)
 ```
@@ -110,5 +112,7 @@ customer-support-router/
 ├── grafana/provisioning/  Datasource + dashboard provisioning ("Customer Support Router" dashboard)
 ├── customer-support-router-plan.md
 ├── phase-1-status-note.md
-└── phase-2-status-note.md
+├── phase-2-status-note.md
+├── ...
+└── phase-6-status-note.md
 ```
