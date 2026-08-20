@@ -47,10 +47,11 @@ spring:
       chat:
         model: qwen2.5-coder:1.5b-instruct
 
-    google-genai:
-      api-key: ${GEMINI_API_KEY}
-      chat:
-        model: gemini-2.5-flash-lite
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+        chat:
+          model: gemini-3.1-flash-lite
 
 server:
   port: 8083
@@ -59,11 +60,16 @@ management:
   endpoints:
     web:
       exposure:
-        include: prometheus
+        include: prometheus, health
   prometheus:
     metrics:
       export:
         enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        classification:
+          latency: true
 
 conversation:
   memory:

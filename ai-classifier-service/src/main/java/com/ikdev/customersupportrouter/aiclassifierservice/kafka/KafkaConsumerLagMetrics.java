@@ -7,6 +7,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.kafka.KafkaClientMetrics;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -31,11 +32,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class KafkaConsumerLagMetrics implements BeanPostProcessor {
 
-    private final MeterRegistry meterRegistry;
+    private final ObjectProvider<MeterRegistry> meterRegistryProvider;
     private final Map<String, KafkaClientMetrics> boundMetricsByConsumerId = new ConcurrentHashMap<>();
 
-    public KafkaConsumerLagMetrics(MeterRegistry meterRegistry) {
-        this.meterRegistry = meterRegistry;
+    public KafkaConsumerLagMetrics(ObjectProvider<MeterRegistry> meterRegistryProvider) {
+        this.meterRegistryProvider = meterRegistryProvider;
     }
 
     @Override
@@ -51,7 +52,7 @@ public class KafkaConsumerLagMetrics implements BeanPostProcessor {
             @Override
             public void consumerAdded(String id, Consumer<K, V> consumer) {
                 KafkaClientMetrics metrics = new KafkaClientMetrics(consumer);
-                metrics.bindTo(meterRegistry);
+                metrics.bindTo(meterRegistryProvider.getObject());
                 boundMetricsByConsumerId.put(id, metrics);
             }
 

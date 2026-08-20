@@ -26,10 +26,10 @@ services:
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@127.0.0.1:9093
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENERS: INTERNAL://127.0.0.1:29092,EXTERNAL://0.0.0.0:9092,CONTROLLER://127.0.0.1:9093
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://127.0.0.1:29092,EXTERNAL://127.0.0.1:9092
+      KAFKA_LISTENERS: INTERNAL://127.0.0.1:29092,EXTERNAL://0.0.0.0:9092,DOCKER://0.0.0.0:9094,CONTROLLER://127.0.0.1:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://127.0.0.1:29092,EXTERNAL://127.0.0.1:9092,DOCKER://kafka:9094
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     ports:
@@ -58,7 +58,63 @@ services:
       retries: 5
       start_period: 5s
 
+  prometheus:
+    image: prom/prometheus:v3.13.0
+    container_name: support-router-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  grafana:
+    image: grafana/grafana:13.2.0
+    container_name: support-router-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: ""
+    depends_on:
+      prometheus:
+        condition: service_healthy
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.9.0
+    container_name: support-router-kafka-exporter
+    restart: unless-stopped
+    profiles:
+      - monitoring
+    ports:
+      - "9308:9308"
+    command:
+      - "--kafka.server=kafka:9094"
+      - "--web.listen-address=:9308"
+    depends_on:
+      kafka:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   kafka_data:
   redis_data:
+  prometheus_data:
+  grafana_data:

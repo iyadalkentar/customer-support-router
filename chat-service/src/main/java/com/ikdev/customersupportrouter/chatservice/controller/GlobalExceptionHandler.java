@@ -12,6 +12,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.ikdev.customersupportrouter.chatservice.dto.ErrorResponse;
 import com.ikdev.customersupportrouter.chatservice.exception.ConversationClosedException;
@@ -62,6 +63,17 @@ public class GlobalExceptionHandler {
         // below would swallow it and report a malformed request as a 500.
         messageMetrics.recordIngest("rejected");
         return ResponseEntity.badRequest().body(new ErrorResponse("Malformed request body"));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoRoute(NoResourceFoundException ex) {
+        // A request to a path with no controller mapping (e.g. a bogus URL or a
+        // disabled actuator endpoint) — a routine client-side 404, not a server bug.
+        // Without this handler the catch-all below reported it as a 500 and counted
+        // it against the ingest error metric, even for requests that never touched
+        // ingest logic at all.
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("No such endpoint"));
     }
 
     /**

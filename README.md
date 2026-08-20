@@ -6,7 +6,8 @@ or ticket creation. Built as a portfolio project demonstrating AI-in-the-loop di
 systems — messaging, caching, and observability included end-to-end.
 
 ## Status
-✅ **Phase 5 (Redis conversation memory) complete** — starting **Phase 6 (observability)** next.
+✅ **Phase 6 (observability) dashboards/infrastructure in place** — tests and docs for it still
+outstanding; **Phase 7 (React frontend)** next.
 
 - [x] Repo scaffolding
 - [x] `chat-service` skeleton (Spring Boot 4.1)
@@ -22,7 +23,7 @@ systems — messaging, caching, and observability included end-to-end.
 - [x] End-to-end integration test for the classification round-trip
 - [x] Routing/escalation logic (TDD — `AUTO_RESPOND` / `ESCALATE_TO_HUMAN` / `CREATE_TICKET`, one OPEN ticket per conversation, `escalations` topic)
 - [x] Conversation memory (Redis)
-- [ ] Observability (Prometheus/Grafana)
+- [x] Observability (Prometheus/Grafana)
 - [ ] React frontend
 
 See [`customer-support-router-plan.md`](./customer-support-router-plan.md) for the full
@@ -56,7 +57,7 @@ Anthropic (swappable) · React · Prometheus + Grafana
 ## Running locally
 ```bash
 cp .env.example .env   # fill in local credentials
-docker compose up -d postgres kafka redis
+docker compose up -d postgres kafka redis prometheus grafana
 
 # Terminal 1 — chat-service on :8081
 cd chat-service
@@ -65,6 +66,24 @@ mvn spring-boot:run
 # Terminal 2 — ai-classifier-service on :8083
 cd ai-classifier-service
 mvn spring-boot:run
+```
+
+`GEMINI_API_KEY` (in `.env`) is required — `llm.provider` defaults to `gemini` in both
+services. Switch to a local model with `llm.provider=ollama` if you don't want to use the
+Gemini API for local dev.
+
+Prometheus is at http://localhost:9090; Grafana is at http://localhost:3000 (`admin`/`admin`)
+with the "Customer Support Router" dashboard auto-provisioned (throughput, classification
+latency, escalations, Kafka consumer lag, error rate). Both services must be running and have
+handled at least one message for their panels to show data — Prometheus scrapes
+`host.docker.internal:8081`/`:8083` since `chat-service`/`ai-classifier-service` run on the
+host, not in Docker.
+
+An optional `kafka-exporter` service adds broker-side consumer-group lag as a second series
+on the "Kafka Consumer Lag" panel; it's opt-in since it's redundant with the JVM-side lag
+metric the dashboard already gets from each service:
+```bash
+docker compose --profile monitoring up -d kafka-exporter
 ```
 
 Running tests requires Docker (Testcontainers spins up real Postgres/Kafka/Redis containers):
@@ -86,7 +105,9 @@ customer-support-router/
 ├── chat-service/          Spring Boot: ingest, REST, Postgres, Kafka producer/consumer, classification read-back
 ├── ai-classifier-service/ Spring Boot: LLM-backed classification, Kafka consumer/publisher
 ├── frontend/              React chat UI (not yet started)
-├── docker-compose.yml     Postgres + Kafka (KRaft) + Redis
+├── docker-compose.yml     Postgres + Kafka (KRaft) + Redis + Prometheus + Grafana (+ optional kafka-exporter)
+├── prometheus.yml         Scrape config for chat-service, ai-classifier-service, kafka-exporter
+├── grafana/provisioning/  Datasource + dashboard provisioning ("Customer Support Router" dashboard)
 ├── customer-support-router-plan.md
 ├── phase-1-status-note.md
 └── phase-2-status-note.md
