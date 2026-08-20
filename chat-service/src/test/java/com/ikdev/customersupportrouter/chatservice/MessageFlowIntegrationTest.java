@@ -49,7 +49,7 @@ class MessageFlowIntegrationTest {
     // container's mapped port, so no manual @DynamicPropertySource is needed.
     @Container
     @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("apache/kafka-native:4.3.1"));
+    static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("apache/kafka:4.3.1"));
 
     @Autowired
     private RestTestClient restTestClient;
