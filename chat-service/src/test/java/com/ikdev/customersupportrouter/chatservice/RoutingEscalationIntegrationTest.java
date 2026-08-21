@@ -144,7 +144,7 @@ class RoutingEscalationIntegrationTest {
         });
 
         await().atMost(Duration.ofSeconds(15)).untilAsserted(() ->
-                assertThat(ticketRepository.findByConversationId(post.conversationId()))
+                assertThat(ticketRepository.findByConversationIdOrderByCreatedAtDesc(post.conversationId()))
                         .singleElement()
                         .satisfies(t -> assertThat(t.getStatus()).isEqualTo(TicketStatus.OPEN)));
 
@@ -181,7 +181,7 @@ class RoutingEscalationIntegrationTest {
                 String.valueOf(post.conversationId()), result)).get(5, SECONDS); // at-least-once redelivery
 
         await().atMost(Duration.ofSeconds(15)).untilAsserted(() ->
-                assertThat(ticketRepository.findByConversationId(post.conversationId())).hasSize(1));
+                assertThat(ticketRepository.findByConversationIdOrderByCreatedAtDesc(post.conversationId())).hasSize(1));
 
         await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> {
             pollEscalations(Duration.ofSeconds(1));
@@ -203,7 +203,7 @@ class RoutingEscalationIntegrationTest {
             assertThat(persisted.getRoutingDecision()).isEqualTo(RoutingDecision.AUTO_RESPOND);
         });
 
-        assertThat(ticketRepository.findByConversationId(post.conversationId())).isEmpty();
+        assertThat(ticketRepository.findByConversationIdOrderByCreatedAtDesc(post.conversationId())).isEmpty();
 
         pollEscalations(Duration.ofSeconds(3));
         assertThat(escalationsFor(post.id())).isEmpty();
@@ -219,7 +219,7 @@ class RoutingEscalationIntegrationTest {
             assertThat(persisted.getRoutingDecision()).isEqualTo(RoutingDecision.AUTO_RESPOND);
         });
 
-        assertThat(ticketRepository.findByConversationId(post.conversationId())).isEmpty();
+        assertThat(ticketRepository.findByConversationIdOrderByCreatedAtDesc(post.conversationId())).isEmpty();
         pollEscalations(Duration.ofSeconds(3));
         assertThat(escalationsFor(post.id())).isEmpty();
     }
@@ -230,14 +230,14 @@ class RoutingEscalationIntegrationTest {
         publish(post, "COMPLAINT", "NEGATIVE", "HIGH"); // escalates -> OPEN ticket
 
         await().atMost(Duration.ofSeconds(15)).untilAsserted(() ->
-                assertThat(ticketRepository.findByConversationId(post.conversationId()))
+                assertThat(ticketRepository.findByConversationIdOrderByCreatedAtDesc(post.conversationId()))
                         .singleElement()
                         .satisfies(t -> assertThat(t.getStatus()).isEqualTo(TicketStatus.OPEN)));
 
         publish(post, "INFO_REQUEST", "NEUTRAL", "LOW"); // corrected -> AUTO_RESPOND
 
         await().atMost(Duration.ofSeconds(15)).untilAsserted(() ->
-                assertThat(ticketRepository.findByConversationId(post.conversationId()))
+                assertThat(ticketRepository.findByConversationIdOrderByCreatedAtDesc(post.conversationId()))
                         .singleElement()
                         .satisfies(t -> assertThat(t.getStatus()).isEqualTo(TicketStatus.CLOSED)));
     }

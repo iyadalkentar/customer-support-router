@@ -9,6 +9,7 @@ import com.ikdev.customersupportrouter.chatservice.exception.ConversationClosedE
 import com.ikdev.customersupportrouter.chatservice.exception.ConversationNotFoundException;
 import com.ikdev.customersupportrouter.chatservice.repository.ConversationRepository;
 import com.ikdev.customersupportrouter.chatservice.repository.MessageRepository;
+import com.ikdev.customersupportrouter.chatservice.repository.TicketRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -32,6 +33,9 @@ class ConversationServiceTest {
 
     @Mock
     private MessageRepository messageRepository;
+
+    @Mock
+    private TicketRepository ticketRepository;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -142,5 +146,63 @@ class ConversationServiceTest {
         conversationService.getOrCreateConversation(null);
 
         verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void getAllConversations_delegatesToRepository() {
+        Conversation conv1 = new Conversation();
+        conv1.setId(1L);
+        Conversation conv2 = new Conversation();
+        conv2.setId(2L);
+        when(conversationRepository.findAllByOrderByCreatedAtDesc(any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(java.util.List.of(conv2, conv1));
+
+        var result = conversationService.getAllConversations();
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0)).isSameAs(conv2);
+        assertThat(result.get(1)).isSameAs(conv1);
+        verify(conversationRepository).findAllByOrderByCreatedAtDesc(any(org.springframework.data.domain.Pageable.class));
+    }
+
+    @Test
+    void getConversation_withValidId_returnsConversation() {
+        Conversation existing = new Conversation();
+        existing.setId(1L);
+        when(conversationRepository.findById(1L)).thenReturn(java.util.Optional.of(existing));
+
+        Conversation result = conversationService.getConversation(1L);
+
+        assertThat(result).isSameAs(existing);
+    }
+
+    @Test
+    void getConversation_withUnknownId_throwsNotFound() {
+        when(conversationRepository.findById(99L)).thenReturn(java.util.Optional.empty());
+
+        assertThatThrownBy(() -> conversationService.getConversation(99L))
+                .isInstanceOf(ConversationNotFoundException.class);
+    }
+
+    @Test
+    void getConversationTickets_withValidConversationId_delegatesToRepository() {
+        when(conversationRepository.existsById(1L)).thenReturn(true);
+        java.util.List<com.ikdev.customersupportrouter.chatservice.entity.Ticket> expectedTickets = java.util.List.of();
+        when(ticketRepository.findByConversationIdOrderByCreatedAtDesc(1L))
+                .thenReturn(expectedTickets);
+
+        var result = conversationService.getConversationTickets(1L);
+
+        assertThat(result).isSameAs(expectedTickets);
+        verify(conversationRepository).existsById(1L);
+        verify(ticketRepository).findByConversationIdOrderByCreatedAtDesc(1L);
+    }
+
+    @Test
+    void getConversationTickets_withUnknownConversationId_throwsNotFound() {
+        when(conversationRepository.existsById(99L)).thenReturn(false);
+
+        assertThatThrownBy(() -> conversationService.getConversationTickets(99L))
+                .isInstanceOf(ConversationNotFoundException.class);
     }
 }

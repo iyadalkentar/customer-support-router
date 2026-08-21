@@ -12,11 +12,13 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.ikdev.customersupportrouter.chatservice.dto.ErrorResponse;
 import com.ikdev.customersupportrouter.chatservice.exception.ConversationClosedException;
 import com.ikdev.customersupportrouter.chatservice.exception.ConversationNotFoundException;
+import com.ikdev.customersupportrouter.chatservice.exception.TicketNotFoundException;
 import com.ikdev.customersupportrouter.chatservice.service.MessageMetrics;
 
 @RestControllerAdvice
@@ -37,6 +39,12 @@ public class GlobalExceptionHandler {
         if (HttpMethod.POST.matches(request.getMethod()) && "/messages".equals(request.getRequestURI())) {
             messageMetrics.recordIngest("rejected");
         }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler(TicketNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleTicketNotFound(TicketNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponse(ex.getMessage()));
     }
@@ -74,6 +82,12 @@ public class GlobalExceptionHandler {
         // ingest logic at all.
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponse("No such endpoint"));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Invalid value for parameter '" + ex.getName() + "': " + ex.getValue()));
     }
 
     /**
