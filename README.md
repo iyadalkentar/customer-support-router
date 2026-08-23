@@ -68,7 +68,16 @@ mvn spring-boot:run
 # Terminal 2 — ai-classifier-service on :8083
 cd ai-classifier-service
 mvn spring-boot:run
+
+# Terminal 3 — frontend dev server on :5173
+cd frontend
+npm install
+npm run dev
 ```
+
+Alternatively, build and run the frontend as a static bundle served by nginx instead of the
+Vite dev server: `docker compose up -d --build frontend` (also on :5173). See
+[`frontend/README.md`](frontend/README.md) for details.
 
 `GEMINI_API_KEY` (in `.env`) is required — `llm.provider` defaults to `gemini` in both
 services. Switch to a local model with `llm.provider=ollama` if you don't want to use the
@@ -86,6 +95,17 @@ on the "Kafka Consumer Lag" panel; it's opt-in since it's redundant with the JVM
 metric the dashboard already gets from each service:
 ```bash
 docker compose --profile monitoring up -d kafka-exporter
+```
+
+### Frontend cross-origin configuration
+
+`chat-service` enforces CORS (Cross-Origin Resource Sharing) to allow the React frontend to safely fetch from its REST endpoints. The allowed origins are configured via the `app.cors.allowed-origins` property in `chat-service/src/main/resources/application.yml`, which defaults to `http://localhost:5173` (the local frontend dev server). Origins not in this list will be blocked by the browser's CORS policy.
+
+To allow additional origins in production:
+```yaml
+app:
+  cors:
+    allowed-origins: "http://localhost:5173,https://yourdomain.com"
 ```
 
 Running tests requires Docker (Testcontainers spins up real Postgres/Kafka/Redis containers):

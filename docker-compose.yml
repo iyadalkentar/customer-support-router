@@ -1,4 +1,14 @@
 services:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${FRONTEND_API_BASE_URL:-http://localhost:8081}
+    container_name: support-router-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+
   postgres:
     image: postgres:17-alpine
     container_name: support-router-postgres

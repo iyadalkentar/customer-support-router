@@ -1,0 +1,22 @@
+.container {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+  background-color: var(--color-background);
+}
+
+.messageList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.loadingState,
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--color-muted);
+  font-size: 16px;
+}
