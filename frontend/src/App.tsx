@@ -2,6 +2,7 @@ import { useActiveConversationId } from './hooks/useActiveConversationId';
 import { useConversation } from './hooks/useConversation';
 import type { MessageResponse } from './api';
 import { ChatWindow } from './components/ChatWindow';
+import { ConversationList } from './components/ConversationList';
 import { ErrorBanner } from './components/ErrorBanner';
 import styles from './App.module.css';
 
@@ -31,14 +32,25 @@ function App() {
 
   return (
     <div className={styles.app}>
-      <ErrorBanner error={error} onRetry={handleRetry} />
-      <ChatWindow
-        conversationId={conversationId}
-        messages={messages}
-        isLoading={isLoading}
-        onMessageSent={handleMessageSent}
-        senderName={SENDER_NAME}
-      />
+      <div className={styles.errorBanner}>
+        <ErrorBanner error={error} onRetry={handleRetry} />
+      </div>
+      <div className={styles.shell}>
+        <ConversationList
+          conversationId={conversationId}
+          onSelect={setConversationId}
+          onNewConversation={() => setConversationId(null)}
+        />
+        <div className={styles.chatArea}>
+          <ChatWindow
+            conversationId={conversationId}
+            messages={messages}
+            isLoading={isLoading}
+            onMessageSent={handleMessageSent}
+            senderName={SENDER_NAME}
+          />
+        </div>
+      </div>
     </div>
   );
 }

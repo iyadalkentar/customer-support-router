@@ -1,5 +1,6 @@
 import type {
   MessageResponse,
+  ConversationResponse,
   ErrorResponse,
   CreateMessageRequest,
 } from './types';
@@ -104,4 +105,13 @@ export async function getConversationMessages(
   conversationId: number
 ): Promise<MessageResponse[]> {
   return makeRequest<MessageResponse[]>(`/conversations/${conversationId}/messages`);
+}
+
+/**
+ * Fetch all conversations
+ * @returns Array of ConversationResponse objects sorted by updatedAt descending (newest first)
+ * @throws ApiError on failure (network error, etc.)
+ */
+export async function getConversations(): Promise<ConversationResponse[]> {
+  return makeRequest<ConversationResponse[]>('/conversations');
 }

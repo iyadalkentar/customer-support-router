@@ -3,5 +3,38 @@
   flex-direction: column;
   height: 100vh;
   background-color: var(--color-background);
+}
+
+.errorBanner {
+  padding: var(--space-4) var(--space-4) 0;
+}
+
+.shell {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  overflow: hidden;
+}
+
+.chatArea {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   padding: var(--space-4);
+  overflow: hidden;
+}
+
+/* Keep this breakpoint in sync with ConversationList.module.css's .panel breakpoint */
+@media (max-width: 640px) {
+  .shell {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .chatArea {
+    height: auto;
+    min-height: 0;
+  }
 }

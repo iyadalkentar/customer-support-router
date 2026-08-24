@@ -18,7 +18,7 @@ export interface MessageResponse {
  */
 export interface ConversationResponse {
   id: number;
-  status: string; // e.g. "ACTIVE" | "CLOSED"
+  status: 'ACTIVE' | 'CLOSED';
   createdAt: string; // ISO-8601 string
   updatedAt: string; // ISO-8601 string
 }
