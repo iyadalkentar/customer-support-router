@@ -9,6 +9,49 @@
   padding: var(--space-4) var(--space-4) 0;
 }
 
+.nav {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-card);
+}
+
+.navTab {
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease;
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navTab {
+    transition: none;
+  }
+}
+
+.navTab:hover {
+  color: var(--color-foreground);
+}
+
+.navTab:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+.navTabActive {
+  color: var(--color-secondary);
+  border-bottom-color: var(--color-secondary);
+}
+
 .shell {
   display: flex;
   flex-direction: row;

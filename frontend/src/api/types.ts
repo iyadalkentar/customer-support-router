@@ -38,3 +38,19 @@ export interface CreateMessageRequest {
   sender: string;
   content: string;
 }
+
+/**
+ * TicketStatus - ticket status values
+ */
+export type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+
+/**
+ * TicketResponse - returned from GET /tickets, GET /tickets/{id}, GET /conversations/{id}/tickets
+ */
+export interface TicketResponse {
+  id: number;
+  conversationId: number;
+  status: TicketStatus;
+  createdAt: string; // ISO-8601 string
+  updatedAt: string; // ISO-8601 string
+}

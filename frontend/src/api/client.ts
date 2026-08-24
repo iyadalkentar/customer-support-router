@@ -3,6 +3,8 @@ import type {
   ConversationResponse,
   ErrorResponse,
   CreateMessageRequest,
+  TicketResponse,
+  TicketStatus,
 } from './types';
 
 /**
@@ -114,4 +116,25 @@ export async function getConversationMessages(
  */
 export async function getConversations(): Promise<ConversationResponse[]> {
   return makeRequest<ConversationResponse[]>('/conversations');
+}
+
+/**
+ * Fetch all tickets, optionally filtered by status
+ * @param status - Optional ticket status filter (OPEN, IN_PROGRESS, RESOLVED, or CLOSED)
+ * @returns Array of TicketResponse objects sorted by createdAt descending (newest first)
+ * @throws ApiError on failure (network error, etc.)
+ */
+export async function getTickets(status?: TicketStatus): Promise<TicketResponse[]> {
+  const path = status ? `/tickets?status=${encodeURIComponent(status)}` : '/tickets';
+  return makeRequest<TicketResponse[]>(path);
+}
+
+/**
+ * Fetch all tickets for a conversation
+ * @param conversationId - The ID of the conversation
+ * @returns Array of TicketResponse objects for that conversation
+ * @throws ApiError on failure (404 if conversation doesn't exist, network error, etc.)
+ */
+export async function getConversationTickets(conversationId: number): Promise<TicketResponse[]> {
+  return makeRequest<TicketResponse[]>(`/conversations/${conversationId}/tickets`);
 }

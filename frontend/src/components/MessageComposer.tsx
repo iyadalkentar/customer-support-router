@@ -11,13 +11,22 @@ interface MessageComposerProps {
   senderName: string;
 }
 
+// Module-level so an unsent draft survives MessageComposer unmounting —
+// e.g. when the user switches to the Tickets tab and back.
+let persistedDraft = '';
+
 export function MessageComposer({
   conversationId,
   onMessageSent,
   senderName,
 }: MessageComposerProps) {
-  const [inputText, setInputText] = useState('');
+  const [inputText, setInputText] = useState(persistedDraft);
   const { sendMessage, isSending, error } = useSendMessage();
+
+  const updateInputText = (value: string) => {
+    persistedDraft = value;
+    setInputText(value);
+  };
 
   const submitMessage = async () => {
     const trimmedText = inputText.trim();
@@ -32,6 +41,7 @@ export function MessageComposer({
     });
 
     if (result) {
+      persistedDraft = '';
       setInputText('');
       onMessageSent(result);
     }
@@ -52,7 +62,7 @@ export function MessageComposer({
           type="text"
           placeholder="Type your message..."
           value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
+          onChange={(e) => updateInputText(e.target.value)}
           disabled={isSending}
           aria-label="Message input"
         />

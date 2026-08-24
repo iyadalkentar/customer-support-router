@@ -1,6 +1,7 @@
 import type { MessageResponse } from '../api';
 import { MessageList } from './MessageList';
 import { MessageComposer } from './MessageComposer';
+import { TicketPanel } from './TicketPanel';
 import styles from './ChatWindow.module.css';
 
 interface ChatWindowProps {
@@ -25,6 +26,7 @@ export function ChatWindow({
           {conversationId ? `Conversation #${conversationId}` : 'New Conversation'}
         </h1>
       </div>
+      <TicketPanel conversationId={conversationId} />
       <MessageList
         messages={messages}
         isLoading={isLoading}

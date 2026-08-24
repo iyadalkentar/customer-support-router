@@ -1,0 +1,121 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-card);
+}
+
+.header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.title {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-foreground);
+  margin: 0;
+  flex: 1;
+}
+
+.filterContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  align-items: flex-end;
+}
+
+.filterLabel {
+  font-size: 12px;
+  color: var(--color-muted);
+  font-weight: 500;
+}
+
+.filterSelect {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  background-color: var(--color-card);
+  color: var(--color-foreground);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 150ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filterSelect {
+    transition: none;
+  }
+}
+
+.filterSelect:hover {
+  border-color: var(--color-muted);
+}
+
+.filterSelect:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.loadingState,
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--color-muted);
+  font-size: 16px;
+  padding: var(--space-4);
+  text-align: center;
+}
+
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: var(--space-4);
+  text-align: center;
+}
+
+.errorTitle {
+  color: var(--color-destructive);
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: var(--space-2);
+}
+
+.errorMessage {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.retryButton {
+  margin-top: var(--space-2);
+}
