@@ -6,8 +6,9 @@ or ticket creation. Built as a portfolio project demonstrating AI-in-the-loop di
 systems — messaging, caching, and observability included end-to-end.
 
 ## Status
-✅ **Phase 6 (observability) complete** — Prometheus/Grafana dashboards, Gemini LLM
-provider, and metrics test coverage all in place; **Phase 7 (React frontend)** next.
+✅ **Phase 7 (React frontend) complete** — full pipeline now has a UI: chat
+conversation view, conversations list, and a read-only tickets view, all on
+top of the Phase 1-6 backend pipeline.
 
 - [x] Repo scaffolding
 - [x] `chat-service` skeleton (Spring Boot 4.1)
@@ -24,7 +25,7 @@ provider, and metrics test coverage all in place; **Phase 7 (React frontend)** n
 - [x] Routing/escalation logic (TDD — `AUTO_RESPOND` / `ESCALATE_TO_HUMAN` / `CREATE_TICKET`, one OPEN ticket per conversation, `escalations` topic)
 - [x] Conversation memory (Redis)
 - [x] Observability (Prometheus/Grafana)
-- [ ] React frontend
+- [x] React frontend (chat view, conversations list, tickets view)
 
 See [`customer-support-router-plan.md`](./customer-support-router-plan.md) for the full
 architecture and phased build plan, [`phase-1-status-note.md`](./phase-1-status-note.md)
@@ -38,7 +39,10 @@ build notes, the rule table, and the one-OPEN-ticket-per-conversation decision, 
 [`phase-5-status-note.md`](./phase-5-status-note.md) for Phase 5 Redis conversation
 memory build notes, and
 [`phase-6-status-note.md`](./phase-6-status-note.md) for Phase 6 observability
-build notes and the Gemini provider swap.
+build notes and the Gemini provider swap, and
+[`phase-7-status-note.md`](./phase-7-status-note.md) for Phase 7 frontend build
+notes (chat view, conversations list, tickets view) and deferred items (no
+automated frontend tests, no pagination UI, no dark mode).
 
 ## Architecture (target)
 ```
@@ -126,7 +130,7 @@ Running tests requires Docker (Testcontainers spins up real Postgres/Kafka/Redis
 customer-support-router/
 ├── chat-service/          Spring Boot: ingest, REST, Postgres, Kafka producer/consumer, classification read-back
 ├── ai-classifier-service/ Spring Boot: LLM-backed classification, Kafka consumer/publisher
-├── frontend/              React chat UI (not yet started)
+├── frontend/              React chat UI: conversation view, conversations list, tickets view
 ├── docker-compose.yml     Postgres + Kafka (KRaft) + Redis + Prometheus + Grafana (+ optional kafka-exporter)
 ├── prometheus.yml         Scrape config for chat-service, ai-classifier-service, kafka-exporter
 ├── grafana/provisioning/  Datasource + dashboard provisioning ("Customer Support Router" dashboard)
@@ -134,5 +138,6 @@ customer-support-router/
 ├── phase-1-status-note.md
 ├── phase-2-status-note.md
 ├── ...
-└── phase-6-status-note.md
+├── phase-6-status-note.md
+└── phase-7-status-note.md
 ```
