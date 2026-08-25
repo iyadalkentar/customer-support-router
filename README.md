@@ -61,8 +61,30 @@ Spring Boot · Kafka (KRaft) · Redis · PostgreSQL · Docker Compose · Ollama 
 Anthropic (swappable) · React · Prometheus + Grafana
 
 ## Running locally
+
+The whole pipeline — Postgres, Kafka, Redis, `chat-service`, `ai-classifier-service`,
+the frontend, Prometheus, and Grafana — runs as one Docker Compose stack:
+
 ```bash
-cp .env.example .env   # fill in local credentials
+cp .env.example .env   # fill in local credentials, in particular GEMINI_API_KEY
+docker compose up -d --build
+```
+
+`chat-service` is on :8081, `ai-classifier-service` on :8083, the frontend on :5173.
+`GEMINI_API_KEY` (in `.env`) is required — `llm.provider` defaults to `gemini` in both
+services. Switch to a local model with `llm.provider=ollama` if you don't want to use the
+Gemini API for local dev (requires an Ollama instance reachable from the container, e.g.
+`http://host.docker.internal:11434`).
+
+Rebuild a single service after changing its code with `docker compose up -d --build
+chat-service` (or `ai-classifier-service`, `frontend`) rather than rebuilding the whole stack.
+
+### Hybrid dev mode (hot reload)
+
+For faster backend iteration, run just the infra in Docker and the Java services on the
+host with `spring-boot-devtools` hot reload:
+
+```bash
 docker compose up -d postgres kafka redis prometheus grafana
 
 # Terminal 1 — chat-service on :8081
@@ -79,20 +101,14 @@ npm install
 npm run dev
 ```
 
-Alternatively, build and run the frontend as a static bundle served by nginx instead of the
-Vite dev server: `docker compose up -d --build frontend` (also on :5173). See
-[`frontend/README.md`](frontend/README.md) for details.
-
-`GEMINI_API_KEY` (in `.env`) is required — `llm.provider` defaults to `gemini` in both
-services. Switch to a local model with `llm.provider=ollama` if you don't want to use the
-Gemini API for local dev.
+Note: `prometheus.yml` scrapes the compose service names (`chat-service:8081`,
+`ai-classifier-service:8083`), so in hybrid mode those two panels won't have data unless
+you temporarily point the scrape targets at `host.docker.internal:8081`/`:8083` instead.
 
 Prometheus is at http://localhost:9090; Grafana is at http://localhost:3000 (`admin`/`admin`)
 with the "Customer Support Router" dashboard auto-provisioned (throughput, classification
 latency, escalations, Kafka consumer lag, error rate). Both services must be running and have
-handled at least one message for their panels to show data — Prometheus scrapes
-`host.docker.internal:8081`/`:8083` since `chat-service`/`ai-classifier-service` run on the
-host, not in Docker.
+handled at least one message for their panels to show data.
 
 An optional `kafka-exporter` service adds broker-side consumer-group lag as a second series
 on the "Kafka Consumer Lag" panel; it's opt-in since it's redundant with the JVM-side lag
@@ -131,7 +147,7 @@ customer-support-router/
 ├── chat-service/          Spring Boot: ingest, REST, Postgres, Kafka producer/consumer, classification read-back
 ├── ai-classifier-service/ Spring Boot: LLM-backed classification, Kafka consumer/publisher
 ├── frontend/              React chat UI: conversation view, conversations list, tickets view
-├── docker-compose.yml     Postgres + Kafka (KRaft) + Redis + Prometheus + Grafana (+ optional kafka-exporter)
+├── docker-compose.yml     Full stack: chat-service, ai-classifier-service, frontend, Postgres, Kafka (KRaft), Redis, Prometheus, Grafana (+ optional kafka-exporter)
 ├── prometheus.yml         Scrape config for chat-service, ai-classifier-service, kafka-exporter
 ├── grafana/provisioning/  Datasource + dashboard provisioning ("Customer Support Router" dashboard)
 ├── customer-support-router-plan.md
