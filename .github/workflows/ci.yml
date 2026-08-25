@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      chat-service: ${{ steps.filter.outputs['chat-service'] }}
+      ai-classifier-service: ${{ steps.filter.outputs['ai-classifier-service'] }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      shared: ${{ steps.filter.outputs.shared }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            chat-service:
+              - 'chat-service/**'
+            ai-classifier-service:
+              - 'ai-classifier-service/**'
+            frontend:
+              - 'frontend/**'
+            shared:
+              - 'docker-compose.yml'
+              - '.github/workflows/**'
+              - 'prometheus.yml'
+              - '.env.example'
+              - 'grafana/provisioning/**'
+      - name: Save filter outputs for cd.yml to reuse
+        run: |
+          cat <<EOF > filters.json
+          {
+            "chat-service": "${{ steps.filter.outputs['chat-service'] }}",
+            "ai-classifier-service": "${{ steps.filter.outputs['ai-classifier-service'] }}",
+            "frontend": "${{ steps.filter.outputs.frontend }}",
+            "shared": "${{ steps.filter.outputs.shared }}"
+          }
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: path-filters
+          path: filters.json
+          retention-days: 1
+
+  java-test:
+    needs: changes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [chat-service, ai-classifier-service]
+    defaults:
+      run:
+        working-directory: ${{ matrix.service }}
+    steps:
+      - if: needs.changes.outputs[matrix.service] == 'true' || needs.changes.outputs.shared == 'true'
+        uses: actions/checkout@v4
+      - if: needs.changes.outputs[matrix.service] == 'true' || needs.changes.outputs.shared == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - if: needs.changes.outputs[matrix.service] == 'true' || needs.changes.outputs.shared == 'true'
+        run: mvn -B test
+
+  frontend-build:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.shared == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm run lint
