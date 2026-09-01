@@ -1,4 +1,6 @@
 # Customer Support Router
+[![CI](https://github.com/iyadalkentar/customer-support-router/actions/workflows/ci.yml/badge.svg)](https://github.com/iyadalkentar/customer-support-router/actions/workflows/ci.yml)
+[![CD](https://github.com/iyadalkentar/customer-support-router/actions/workflows/cd.yml/badge.svg)](https://github.com/iyadalkentar/customer-support-router/actions/workflows/cd.yml)
 
 An AI-powered customer support routing pipeline: incoming chat messages are classified
 by an LLM (intent, sentiment, urgency) and routed to auto-response, human escalation,
